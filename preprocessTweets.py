@@ -205,7 +205,7 @@ def removeNoisyTokens(dataset):
 
 def preprocess(dataset):
 	# dataset=["is a ... /? ?? #Ram #awesome brb 3774 kgdf.com sd.ly :) :( <3 ;) @ram @sawpnil ... His phone is so awsm yaar. I 2 wanna be lyk him. Gtg! See ya later :D !"]
-	tk_data=tokenizer(dataset[:1000])
+	tk_data=tokenizer(dataset)
 	print("Tokenized Dataset:",len(tk_data))
 	# ##print(tk_data)
 	stp_data=removeStopwords(tk_data)
@@ -214,13 +214,14 @@ def preprocess(dataset):
 	clean_data=removeNoisyTokens(stp_data)
 	# return 
 	print(clean_data[100:110])
-	dbfile = open('clean_data', 'wb') 
-	# source, destination 
-	pickle.dump(clean_data, dbfile) 
-	dbfile.close()
+	# dbfile = open('clean_data.pkl', 'wb') 
+	# source, destination
+	# pickle.dump(clean_data, dbfile) 
+	# dbfile.close()
 	return clean_data
 
 def getModelInput():
 	raw_data=getArrFromFile("apple_tweets.csv","train")
 	
 	return preprocess(raw_data)
+# getModelInput()
