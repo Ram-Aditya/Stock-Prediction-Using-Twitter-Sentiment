@@ -13,13 +13,20 @@ from sklearn.metrics import roc_auc_score
 import pandas as pd
 from SVM import SVM
 import random
+import sklearn.metrics as metrics
+
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import precision_recall_fscore_support
+
+import matplotlib.pyplot as plt
+
 
 def getArrFromFile():
 
 	twData=[]
 	l=0
 	ign=[]
-	with open("financial_data_MSFT.csv") as csv_file:
+	with open("financial_data_AAPL.csv") as csv_file:
 		csv_reader = csv.reader(csv_file, delimiter=',')
 		line_count = 0
 		data=[]
@@ -62,8 +69,8 @@ def getArrFromFile():
 	for row in data2:
 		if row!="Unavailable":
 			count+=1
-	print("Grand count",count)
-	with open("twitter_data_MSFT.csv") as csv_file:
+	# print("Grand count",count)
+	with open("twitter_data_AAPL.csv") as csv_file:
 		csv_reader = csv.reader(csv_file, delimiter=',')
 		line_count = 0
 		data=[]
@@ -98,7 +105,7 @@ def makeFeatures(fin_data,tw_data):
 
 def train(features):
 	tf =pd.DataFrame(features)
-	tf.sample(frac=1)
+	tf.sample(frac=1,random_state=9)
 	print("Df dimension",tf.shape)
 	print(tf.iloc[:,36:])
 	X = tf.iloc[0:468,0:3]
@@ -108,10 +115,34 @@ def train(features):
 	X_test=preprocessing.scale(X_test)
 	Y_test = tf.iloc[500:,3]
 	parameters = {'kernel':('linear', 'rbf'), 'C':[1, 10]}
-	svc = SVC(gamma="auto",verbose=False)
-	clf = GridSearchCV(svc, parameters, cv=5) 
-	clf.fit(X,Y)
-	y_pred = clf.predict(X_test)
+	# svc = SVC(gamma="auto",verbose=False)
+	# clf = GridSearchCV(svc, parameters, cv=5) 
+	# clf.fit(X,Y)
+	# y_pred = clf.predict(X_test)
+	# print("Accuracy is ",clf.score(X_test,Y_test))
+
+
+	lr=LogisticRegression()
+	lr.fit(X,Y)
+	y_pred=lr.predict(X_test)
+	acc=accuracy_score(Y_test,y_pred)
+	print("Accuracy: ",acc)
+
+
+	fpr, tpr, threshold = metrics.roc_curve(Y_test, y_pred)
+	roc_auc = metrics.auc(fpr, tpr)
+	print(precision_recall_fscore_support(y_true, y_pred, average='macro'))
+
+	# # method I: plt
+	# plt.title('Receiver Operating Characteristic')
+	# plt.plot(fpr, tpr, 'b', label = 'AUC = %0.2f' % roc_auc)
+	# plt.legend(loc = 'lower right')
+	# plt.plot([0, 1], [0, 1],'r--')
+	# plt.xlim([0, 1])
+	# plt.ylim([0, 1])
+	# plt.ylabel('True Positive Rate')
+	# plt.xlabel('False Positive Rate')
+	# plt.show()
 
 	# X = tf.iloc[0:300,0:3]
 	# # X=preprocessing.scale(X)
@@ -133,16 +164,13 @@ def train(features):
 	# print("accuracy:\t%.3f" % (acc))
 	# print("Converged after %d iterations" % (iterations))
 
-	parameters = {'kernel':('linear', 'rbf'), 'C':[1, 10]}
-	svc = SVC(gamma="auto",verbose=False)
-	clf = GridSearchCV(svc, parameters, cv=5) 
-	clf.fit(X,Y)
-	y_pred = clf.predict(X_test)
+	# parameters = {'kernel':('linear', 'rbf'), 'C':[1, 10]}
+	# svc = SVC(gamma="auto",verbose=False)
+	# clf = GridSearchCV(svc, parameters, cv=5) 
+	# clf.fit(X,Y)
+	# y_pred = clf.predict(X_test)
 
 	# print("Predicted output is ",y_pred)
-	# print("ROC",roc_auc_score(y_pred, Y_test))
-	print("Accuracy is ",clf.score(X_test,Y_test))
-
 
 
 fin_data,tw_data=getArrFromFile()

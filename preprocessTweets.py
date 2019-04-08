@@ -5,6 +5,7 @@ import re
 from textblob import TextBlob
 from collections import defaultdict
 import pickle
+
 #Filter out non english sentences
 def isEnglish(sentence):
 	with open('english_words.txt') as word_file:
@@ -18,7 +19,24 @@ def isEnglish(sentence):
 		return False
 	return True
 
-# ##print(isEnglish("This is an english sentence ihiafd kahfli but it is kind of legible"))
+def parseLargeFile(filename):
+	twData=[]
+	with open(filename,encoding = "ISO-8859-1") as csv_file:
+		csv_reader = csv.reader(csv_file, delimiter=',')
+		line_count = 0
+		for row in csv_reader:
+			# ##print(l)
+			if(line_count!=0):
+				# sent=row[5]
+				# if(file_type=="train" and sent not in ['1','3','5'] ):
+					# continue
+				tw=row[6]
+				if( not isEnglish(tw)):
+					continue
+				twData.append(sent)
+			else:
+				line_count=1
+	return twData
 
 #Parse csv file to get array
 def getArrFromFile(filename,file_type):
@@ -35,18 +53,18 @@ def getArrFromFile(filename,file_type):
 				sent=row[5]
 				if(file_type=="train" and sent not in ['1','3','5'] ):
 					continue
-				tw=row[11]
+				# tw=row[11]
 				# if( not isEnglish(tw)):
 				# 	continue
-				twData.append(tw)
+				twData.append(sent)
 			else:
 				line_count=1
 	return twData
 
 # arr=getArrFromFile("apple_tweets.csv","train")
 # ##print(len(arr),arr[:10])
-#Tokenize each tweet
 
+#Tokenize each tweet
 def tokenizer(dataset):
 	tkr = TweetTokenizer(preserve_case=True, reduce_len=False, strip_handles=False)
 	tokenized_tw=[]
@@ -112,17 +130,17 @@ def removeNoisyTokens(dataset):
 		for word_i in range(len(row)):
 			##print("Word: ",row[word_i],end=" ")
 			if len(re.findall(WEB_URL_REGEX,row[word_i]))>0:
-				l.append("URL")
+				l.append(" URL ")
 				##print("URL Case")
 				continue
 			try:
 				if len(re.findall(user_handle_reg,row[word_i]))>0:
 					# row[word_i]="USER"
-					l.append("USER")
+					l.append(" USER ")
 					##print("USER")
 					continue
 			except:
-				#print(len(re.findall(user_handle_reg,row[word_i])))
+				print(len(re.findall(user_handle_reg,row[word_i])))
 				exit()
 			hashtag=re.findall(hashtag_reg,row[word_i])
 			if len(hashtag)>0 :
@@ -137,32 +155,32 @@ def removeNoisyTokens(dataset):
 			#Emoticon mapping
 			if(len(re.findall(reg1,row[word_i]))>0):
 				# row[word_i]=EMO_POS
-				l.append("EMO_POS")
+				l.append(" EMO_POS ")
 				#print("Emoti Case")
 				continue
 			if(len(re.findall(reg2,row[word_i]))>0):
 				# row[word_i]=EMO_POS
-				l.append("EMO_POS")
+				l.append(" EMO_POS ")
 				#print("Emoti Case")
 				continue
 			if(len(re.findall(reg3,row[word_i]))>0):
 				# row[word_i]=EMO_POS
-				l.append("EMO_POS")
+				l.append(" EMO_POS ")
 				#print("Emoti Case")
 				continue
 			if(len(re.findall(reg4,row[word_i]))>0):
 				# row[word_i]=
-				l.append("EMO_POS")
+				l.append(" EMO_POS ")
 				#print("Emoti Case")
 				continue
 			if(len(re.findall(reg5,row[word_i]))>0):
 				# row[word_i]=EMO_NEG
-				l.append("EMO_NEG")
+				l.append(" EMO_NEG ")
 				#print("Emoti Case")
 				continue
 			if(len(re.findall(reg6,row[word_i]))>0):
 				# row[word_i]=EMO_NEG
-				l.append("EMO_NEG")
+				l.append(" EMO_NEG ")
 				#print("Emoti Case")
 				continue
 
@@ -175,7 +193,7 @@ def removeNoisyTokens(dataset):
 				else:
 					#print("Word Case")
 					row[word_i]=str(TextBlob(row[word_i]).correct()).lower()
-				l.append(row[word_i])
+				l.append(row[word_i]+" ")
 			else:
 				#print("Punct/others Case")
 				sentMarkersReg="""(\.+|\?+|!+|;+)"""
@@ -193,10 +211,11 @@ def removeNoisyTokens(dataset):
 		sents=sent.split(".")
 
 		print("Tweet count: ",c)
-		l=[]
+		l=""
 		for sent in sents:
 			if sent.strip()!="":
-				cleanData.append(sent)
+				l+=sent.strip()
+		cleanData.append(l)
 		#print("Final ",c,l)
 
 		# cleanData.append(l)
@@ -204,24 +223,23 @@ def removeNoisyTokens(dataset):
 	return cleanData
 
 def preprocess(dataset):
-	# dataset=["is a ... /? ?? #Ram #awesome brb 3774 kgdf.com sd.ly :) :( <3 ;) @ram @sawpnil ... His phone is so awsm yaar. I 2 wanna be lyk him. Gtg! See ya later :D !"]
+
 	tk_data=tokenizer(dataset)
-	print("Tokenized Dataset:",len(tk_data))
-	# ##print(tk_data)
 	stp_data=removeStopwords(tk_data)
-	# ##print(stp_data)
-	print("Removed Stopword Dataset:",len(stp_data))
 	clean_data=removeNoisyTokens(stp_data)
-	# return 
-	print(clean_data[100:110])
-	# dbfile = open('clean_data.pkl', 'wb') 
-	# source, destination
-	# pickle.dump(clean_data, dbfile) 
-	# dbfile.close()
+	# print(clean_data[:9])
+
+	dbfile = open('clean_data_y_3p8k.pkl', 'wb') 
+	pickle.dump(clean_data, dbfile) 
+	dbfile.close()
 	return clean_data
 
 def getModelInput():
 	raw_data=getArrFromFile("apple_tweets.csv","train")
-	
+	# print(len(raw_data))
+	# dbfile = open('clean_data_y_3p8k.pkl', 'wb') 
+	# pickle.dump(raw_data, dbfile) 
+	# dbfile.close()
+
 	return preprocess(raw_data)
 # getModelInput()
